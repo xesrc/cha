@@ -6,6 +6,7 @@ from lxml import etree
 from optparse import OptionParser
 
 headers = {"User-Agent": "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)"}
+config = {'meaning_num': 1}
 
 def paserS(argv):
     url = "http://m.dict.cn/" + request.quote(argv)
@@ -17,7 +18,10 @@ def paserS(argv):
     words = page.xpath('//*[@id="sctlist"]/li[1]/div[1]/div/div/ul')
     meaning = page.xpath('//*[@id="sctlist"]/li[1]/div[1]/div/div/ul/li/strong')
     if len(meaning)>=1:
-        result += (meaning[0].text + '\n')
+        if config['meaning_num'] > 0:
+            result += '\n'.join([meaning[i].text for i in range(config['meaning_num'])]) + '\n'
+        else: # show all
+            result += '\n'.join([i.text for i in meaning]) + '\n'
         phonetic = page.xpath('/html/body/div[1]/div/div[3]/span[1]/bdo')
         if len(phonetic)>=1:
             result += ('en: ' + phonetic[0].text + '\n')
@@ -61,6 +65,14 @@ usage:
                  metavar='is_serial',
                  help='serially quering (slower), not simultaneously',
                  )
+    p.add_option('-f', '--first',
+                 action='store',
+                 dest='meaning_num',
+                 metavar='meaning_num',
+                 type='int',
+                 help='return first n meanings, 0 for all',
+                 default=1,
+                 )
     p.add_option('-p', '--plain',
                  action='store_true',
                  dest='is_plain',
@@ -69,6 +81,7 @@ usage:
                  )
     opt, arg = p.parse_args()
     headers['User-Agent'] = opt.ua
+    config['meaning_num'] = opt.meaning_num
     if len(arg) < 1:
         p.error('<query> must be supplied')
     # query
